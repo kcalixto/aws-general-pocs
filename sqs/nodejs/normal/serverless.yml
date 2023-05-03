@@ -1,0 +1,28 @@
+service: aws-common-nodejs-normal-sqs
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: 'poc'
+  region: sa-east-1
+
+functions:
+  consumer:
+    handler: index.handler
+    dependsOn:
+      - NormalQueue
+    events:
+      - sqs:
+          arn: !GetAtt NormalQueue.Arn
+          batchSize: 1
+          maximumConcurrency: 2
+          functionResponseType: ReportBatchItemFailures
+
+resources:
+  Resources:
+    NormalQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:service}-queue
