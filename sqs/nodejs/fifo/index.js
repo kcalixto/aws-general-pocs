@@ -28,24 +28,22 @@ export const handler = async (event, ctx, callback) => {
                     "event_name": {
                         S: body?.event_name ?? "",
                     },
+                    "action": {
+                        S: body?.action ?? "",
+                    },
+                    "appsflyer_id": {
+                        S: body?.appsflyer_id ?? "",
+                    },
+                    "campaign": {
+                        S: body?.campaign ?? "",
+                    },
+                    "event_value": {
+                        S: body?.event_value ?? "",
+                    },
 
-
-                    // "action": {
-                    //     S: body?.action ?? "",
-                    // },
-                    // "appsflyer_id": {
-                    //     S: body?.appsflyer_id ?? "",
-                    // },
-                    // "campaign": {
-                    //     S: body?.campaign ?? "",
-                    // },
-                    // "event_value": {
-                    //     S: body?.event_value ?? "",
-                    // },
-
-                    // "oc_start_source": {
-                    //     S: body?.oc_start_source ?? "",
-                    // }
+                    "oc_start_source": {
+                        S: body?.oc_start_source ?? "",
+                    }
                 }
             }
 
@@ -69,7 +67,7 @@ export const handler = async (event, ctx, callback) => {
         } catch (error) {
             console.log(error);
         } finally {
-            setTimeout(resolve, 100);
+            setTimeout(resolve, 500);
         }
     })
 }
