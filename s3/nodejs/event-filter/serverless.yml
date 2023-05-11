@@ -1,0 +1,29 @@
+service: aws-common-nodejs-s3-eventfiltering
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: 'poc'
+  region: sa-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource: "*"
+
+functions:
+  consumer:
+    handler: index.handler
+    events:
+      - s3:
+          bucket: kauacalixtolab.xyz
+          event: s3:ObjectCreated:*
+          # rules:
+          #   - prefix: uploads/*
+          #   - suffix: .csv
+          # # if we don't pass this flag serverless will try to make a new bucket
+          existing: true
