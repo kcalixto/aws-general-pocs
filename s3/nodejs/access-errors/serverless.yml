@@ -1,0 +1,22 @@
+service: aws-common-nodejs-s3-accesserrors
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: 'poc'
+  region: sa-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+            - s3:GetObject
+            - s3:GetObjectVersion
+          Resource: "*"
+
+functions:
+  test:
+    handler: index.handler
