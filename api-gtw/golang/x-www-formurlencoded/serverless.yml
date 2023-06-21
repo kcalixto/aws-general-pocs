@@ -1,0 +1,75 @@
+service: aws-common-nodejs-api-gtw-x-www
+
+frameworkVersion: "3"
+
+custom:
+  this: ${self:service}-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: 'poc'
+  region: sa-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource: "*"
+
+functions:
+  main:
+    handler: bin/main
+    cors: true
+    events:
+      - httpApi:
+          path: /auth/server/v1.1/token 
+          method: post 
+
+resources:
+  Resources:
+    TESTEApiGatewayTooMany5xx:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "api gateway too many 5XX"
+        ComparisonOperator: GreaterThanThreshold
+        Namespace: AWS/ApiGateway
+        MetricName: 5XXError
+        Period: 300 # 5 min
+        Threshold: 5
+        EvaluationPeriods: 1
+        Statistic: Sum
+        TreatMissingData: notBreaching
+        Dimensions:
+          - Name: ApiName
+            Value: ${self:provider.stage}-${self:service}
+
+    ErrorLogsMetric:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        FilterPattern: "?error ?ERROR ?panic"
+        LogGroupName: /aws/lambda/${self:custom.this}-main
+        MetricTransformations:
+          - 
+            MetricValue: "1"
+            MetricNamespace: common
+            MetricName: "Lambda ${self:custom.this}"
+
+    ErrorLogs:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "main - Too Many Errors"
+        ComparisonOperator: GreaterThanThreshold
+        Namespace: common
+        MetricName: "Lambda ${self:custom.this}"
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:custom.this}-main
+        Period: 300 # 5 min
+        Threshold: 5
+        EvaluationPeriods: 1
+        Statistic: Sum
+        TreatMissingData: notBreaching
+        AlarmActions:
+            - arn:aws:sns:sa-east-1:447988592397:Slack-SNS

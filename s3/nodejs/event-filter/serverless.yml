@@ -2,6 +2,9 @@ service: aws-common-nodejs-s3-eventfiltering
 
 frameworkVersion: "3"
 
+custom:
+  this: ${self:service}-${self:provider.stage}
+
 provider:
   name: aws
   runtime: nodejs18.x
@@ -22,8 +25,56 @@ functions:
       - s3:
           bucket: kauacalixtolab.xyz
           event: s3:ObjectCreated:*
-          # rules:
-          #   - prefix: uploads/*
-          #   - suffix: .csv
-          # # if we don't pass this flag serverless will try to make a new bucket
+          rules:
+            - prefix: uploads/
+            - suffix: .png
+          # if we don't pass this flag serverless will try to make a new bucket
           existing: true
+          forceDeploy: true
+
+resources:
+  Resources:
+# ***************************************************************************** #
+#                                  Queue Router                                 #
+# ***************************************************************************** #
+
+# QueueRouter - Too Many Lambda Errors Alert
+
+    Teste:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          AlarmName: "Teste"
+          ComparisonOperator: GreaterThanThreshold
+          Namespace: AWS/Lambda
+          MetricName: Errors
+          Period: 300 # 5 min
+          Threshold: 10
+          EvaluationPeriods: 1
+          Statistic: Sum
+          TreatMissingData: notBreaching
+          Dimensions:
+            - Name: FunctionName
+              Value: ${self:custom.this}-consumer
+
+    TesteLogMetricFilter:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        FilterPattern: "error ERROR panic"
+        LogGroupName: /aws/lambda/${self:custom.this}-consumer
+        MetricTransformations:
+          - MetricValue: 1
+            MetricNamespace: marketplace
+            MetricName: "[Marketplace] Appsflyer - Too Many Errors (queue-router)"
+
+    TesteLogs:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "[Marketplace] Appsflyer - Too Many Errors (queue-router)"
+        ComparisonOperator: GreaterThanThreshold
+        Namespace: marketplace
+        MetricName: "[Marketplace] Appsflyer - Too Many Errors (queue-router)"
+        Period: 300 # 5 min
+        Threshold: 5
+        EvaluationPeriods: 1
+        Statistic: Sum
+        TreatMissingData: notBreaching

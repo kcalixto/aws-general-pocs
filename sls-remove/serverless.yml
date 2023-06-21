@@ -1,0 +1,23 @@
+service: sls-remove
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  memory: 128
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: hello
+          method: get
+          cors: true
+
+  world:
+    handler: handler.world
+    events:
+      - http:
+          path: world
+          method: get
+          cors: true
