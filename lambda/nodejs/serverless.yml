@@ -1,0 +1,16 @@
+service: aws-common-nodejs-lambda
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  memory: 128
+  stage: poc
+
+functions:
+  handler:
+    handler: index.handler
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
