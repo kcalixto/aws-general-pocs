@@ -1,11 +1,11 @@
 import * as AWS from "aws-sdk"
 
-async function load() {
+export async function load() {
     try {
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
             TableName: 'geminio-test-table',
             Item: {
-                "id": { S: "123" },
+                "id": { S: `${Math.random() * 100}` },
                 "anonymous_id": { S: "123" },
                 "event_name": { S: "123" },
                 "product_name": { S: "123" },
@@ -23,4 +23,3 @@ async function load() {
         console.log("error: ", e.message);
     }
 }
-load()

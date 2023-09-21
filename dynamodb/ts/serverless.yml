@@ -1,0 +1,77 @@
+service: aws-common-ts-dynamodb
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  memory: 128
+  timeout: 30
+  stage: poc
+  region: sa-east-1
+
+functions:
+  handler:
+    handler: index.load
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    DynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-table
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1    
+  
+    DynamoDBTooManyItemsAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "${self:service}-table Possible Missing Conversions"
+        AlarmDescription: "Alarm when DynamoDB has too many items"
+        Namespace: AWS/DynamoDB
+        MetricName: ConsumedWriteCapacityUnits
+        Dimensions:
+          - Name: TableName
+            Value: ${self:service}-table
+        Statistic: Sum
+        Period: 86400 # 1 day
+        EvaluationPeriods: 1
+        Threshold: 150
+        ComparisonOperator: LessThanThreshold
+        TreatMissingData: breaching
+        AlarmActions:
+          - arn:aws:sns:sa-east-1:447988592397:Slack-SNS
+
+    DynamoDBWriteAnomalyAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "${self:service}-table Writes Anomaly"
+        AlarmDescription: "Alarm when DynamoDB has write anomaly"
+        ComparisonOperator: LessThanLowerOrGreaterThanUpperThreshold
+        EvaluationPeriods: 1
+        Metrics:
+          - Expression: ANOMALY_DETECTION_BAND(m1, 2)
+            Id: ad1
+          - Id: m1
+            MetricStat:
+              Metric:
+                MetricName: ConsumedWriteCapacityUnits
+                Namespace: AWS/DynamoDB
+                Dimensions:
+                  - Name: TableName
+                    Value: ${self:service}-table
+              Period: 300 # 5min
+              Stat: Sum
+        ThresholdMetricId: ad1
+        AlarmActions:
+          - arn:aws:sns:sa-east-1:447988592397:Slack-SNS
