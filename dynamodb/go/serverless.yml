@@ -1,0 +1,29 @@
+service: go-dynamodb
+
+frameworkVersion: "3"
+
+custom:
+  this: ${self:service}-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: "poc"
+  region: sa-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource: "*"
+
+functions:
+  main:
+    handler: bin/main
+    cors: true
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
