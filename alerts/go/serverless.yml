@@ -1,0 +1,45 @@
+service: alerts
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: poc
+  region: sa-east-1
+  memorySize: 128
+  timeout: 5
+  logRetentionInDays: 1
+
+functions:
+  handler:
+    handler: bin/handler
+    events:
+      - http:
+          path: /
+          method: GET
+          cors: true
+
+resources:
+  Resources:
+    Metric:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        FilterPattern: '"test: pattern"'
+        LogGroupName: /aws/lambda/alerts-poc-handler
+        MetricTransformations:
+          - MetricValue: "1"
+            MetricNamespace: poc
+            MetricName: "Alarm-Test"
+
+    Alarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "Alarm-Test"
+        ComparisonOperator: GreaterThanThreshold
+        Namespace: poc
+        MetricName: "Alarm-Test"
+        Period: 300 # 5 minutes
+        Threshold: 1
+        DatapointsToAlarm: 1
+        EvaluationPeriods: 1
+        Statistic: Sum
+        TreatMissingData: notBreaching
