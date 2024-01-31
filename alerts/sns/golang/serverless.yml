@@ -1,0 +1,71 @@
+service: alert-sns
+
+custom:
+  circuitBreaker:
+    snsTopicName: "alert-sns-topic"
+
+  this: ${self:service}-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: poc
+  region: sa-east-1
+  memorySize: 128
+  timeout: 30
+  logRetentionInDays: 3
+
+  environment:
+    TARGET_VALUE: 100
+
+functions:
+  circuitBreaker:
+    handler: bin/handler
+    events:
+      - sns:
+          arn: !Ref CircuitBreakerSNSTopic
+          topicName: ${self:custom.circuitBreaker.snsTopicName}
+
+  trigger:
+    handler: bin/trigger
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    CircuitBreakerSNSTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        DisplayName: "Circuit_Breaker"
+        TopicName: ${self:custom.circuitBreaker.snsTopicName}
+
+    CircuitBreakerSNSTopicParameterArn:
+      Type: AWS::SSM::Parameter
+      DependsOn: CircuitBreakerSNSTopic
+      Properties:
+        Name: /alert-sns/sns/arn
+        Type: String
+        Value: !Ref CircuitBreakerSNSTopic
+
+    AlarmTrigger:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: "Circuit Breaker Alarm - POC"
+        ComparisonOperator: GreaterThanThreshold
+        Namespace: AWS/Lambda
+        MetricName: Errors
+        Period: 900 # 15 min
+        Threshold: 2
+        EvaluationPeriods: 1
+        Statistic: Sum
+        TreatMissingData: notBreaching
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:custom.this}-trigger
+        AlarmActions:
+          - arn:aws:sns:sa-east-1:664960032265:alert-sns-topic
+        OKActions:
+          - arn:aws:sns:sa-east-1:664960032265:alert-sns-topic
