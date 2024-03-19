@@ -1,0 +1,39 @@
+service: go-apigtw-async-request
+
+provider:
+  name: aws
+  runtime: provided.al2
+  architecture: arm64
+  stage: poc
+  region: sa-east-1
+  memorySize: 128
+  timeout: 3
+  logRetentionInDays: 3
+
+package:
+  individually: true
+  patterns:
+    - "!./**"
+    - ./bin/**
+
+functions:
+  notAsync:
+    handler: bin/handler/bootstrap
+    package:
+      artifact: bin/handler/handler.zip
+    events:
+      - http:
+          path: /
+          method: POST
+          cors: true
+
+  async:
+    handler: bin/handler/bootstrap
+    package:
+      artifact: bin/handler/handler.zip
+    events:
+      - http:
+          path: /async
+          method: POST
+          cors: true
+          async: true

@@ -1,0 +1,81 @@
+Resources:
+  CustomMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "error"
+      LogGroupName: /aws/lambda/${self:custom.this}
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: ${self:service}
+          MetricName: "ErrorLog"
+
+  MetricFilterPercentageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: "Custom Log Percentage Alarm"
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Metric:
+              MetricName: Invocations
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: ${self:custom.this}
+            Period: 900 # 15 minute
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              MetricName: "ErrorLog"
+              Namespace: ${self:service}
+            Period: 900 # 15 minute
+            Stat: Sum
+        - Id: e1
+          ReturnData: true
+          Expression: (m2*100)/m1
+          Label: "Custom Log Percentage"
+      Threshold: 50
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+
+  ErrorPercentageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: "Error Percentage Alarm"
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Metric:
+              MetricName: Invocations
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: ${self:custom.this}
+            Period: 60 # 1 minute
+            Stat: Sum
+            Unit: Count
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              MetricName: Errors
+              Namespace: AWS/Lambda
+              Dimensions:
+                - Name: FunctionName
+                  Value: ${self:custom.this}
+            Period: 60 # 1 minute
+            Stat: Sum
+            Unit: Count
+        - Id: e1
+          ReturnData: true
+          Expression: (m2*100)/m1
+          Label: "Error Percentage"
+      Threshold: 5 # 5%
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
