@@ -1,0 +1,31 @@
+service: aws-s3-creator
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  stage: poc
+  runtime: provided.al2
+  architecture: arm64
+  timeout: 30
+  memorySize: 128
+  logRetentionInDays: 1
+  region: sa-east-1
+  deploymentBucket: kcalixto-serverless-framework
+
+package:
+  individually: true
+  patterns:
+    - "!./**"
+    - ./bin/**
+
+functions:
+  consumer:
+    handler: bootstrap
+    package:
+      artifact: ./bin/consumer.zip
+    events:
+      - s3:
+          bucket: kcalixto-static-hosting-sa-east-1
+          existing: true
+          event: s3:ObjectCreated:*

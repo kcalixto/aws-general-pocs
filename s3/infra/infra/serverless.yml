@@ -1,0 +1,37 @@
+service: aws-s3-resource
+
+frameworkVersion: "3"
+
+custom:
+  bucketName: kcalixto-${self:service}-${self:provider.stage}
+
+provider:
+  name: aws
+  stage: poc
+  region: sa-east-1
+  deploymentBucket: kcalixto-serverless-framework
+  # s3:
+  #   fileUploads:
+  #     name: ${self:custom.bucketName}
+  #     tags:
+  #       - Key: owner
+  #         Value: kcalixto
+    
+resource:
+  Resources:
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName}
+        Tags:
+          - Key: owner
+            Value: kcalixto
+    SSMParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:service}/${self:provider.stage}/${self:custom.bucketName}-arn
+        Type: String
+        Value: !GetAtt S3Bucket.Arn
+        Tags:
+          - Key: owner
+            Value: kcalixto

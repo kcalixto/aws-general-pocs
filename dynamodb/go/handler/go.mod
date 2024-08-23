@@ -1,6 +1,6 @@
-module aws-general-pocs/api-gtw/golang/x-www-formurlencoded/handler
+module github.com/kcalixto/aws-general-pocs/dynamodb/go/handler
 
-go 1.20
+go 1.22.0
 
 require (
 	github.com/aws/aws-lambda-go v1.41.0
