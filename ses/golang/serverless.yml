@@ -7,9 +7,13 @@ custom:
 
 provider:
   name: aws
-  runtime: go1.x
-  stage: 'poc'
+  runtime: provided.al2
+  architecture: arm64
+  stage: "poc"
   region: sa-east-1
+  timeout: 30
+  memorySize: 128
+  logRetentionInDays: 1
   iam:
     role:
       statements:
@@ -19,10 +23,17 @@ provider:
             - ses:VerifyEmailIdentity
           Resource: "*"
 
+package:
+  individually: true
+  patterns:
+    - "!./**"
+    - ./bin/**
+
 functions:
   main:
-    handler: bin/main
-    cors: true
+    handler: bootstrap
+    package:
+      artifact: bin/main.zip
     events:
       - http:
           path: /
