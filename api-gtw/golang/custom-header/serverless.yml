@@ -1,0 +1,38 @@
+service: go-apigtw-custom-header
+
+provider:
+  name: aws
+  runtime: provided.al2
+  architecture: arm64
+  stage: poc
+  region: sa-east-1
+  memorySize: 128
+  timeout: 3
+  logRetentionInDays: 3
+  apiGateway:
+    # This section allows you to modify the response headers
+    responseParameters:
+      # Add a custom header to every response
+      method.response.header.X-Custom-Header: "'MyCustomValue'"
+
+package:
+  individually: true
+  patterns:
+    - "!./**"
+    - ./bin/**
+
+functions:
+  api:
+    handler: bootstrap
+    package:
+      artifact: bin/api.zip
+    events:
+      - http:
+          path: /
+          method: GET
+          cors: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
+              X-Custom-Header: "'custom-value'"
+

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -24,16 +25,16 @@ func Handler(ctx context.Context) error {
 
 	client := dynamodb.NewFromConfig(cfg)
 
-	item, err := attributevalue.MarshalMap(map[string]interface{}{
-		"pk": "item",
-		"sk": "one",
+	item, err := attributevalue.MarshalMap(map[string]any{
+		"pk":         "item",
+		"created_at": time.Now().Unix(),
 	})
 	if err != nil {
 		return err
 	}
 
 	_, err = client.PutItem(context.TODO(), &dynamodb.PutItemInput{
-		TableName: aws.String("test-db-2"),
+		TableName: aws.String(os.Getenv("TABLE_NAME")),
 		Item:      item,
 	})
 	if err != nil {
@@ -42,23 +43,24 @@ func Handler(ctx context.Context) error {
 
 	key := map[string]types.AttributeValue{
 		"pk": &types.AttributeValueMemberS{Value: "item"},
-		"sk": &types.AttributeValueMemberS{Value: "one"},
 	}
 	out, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
-		TableName: aws.String("test-db"),
+		TableName: aws.String(os.Getenv("TABLE_NAME")),
 		Key:       key,
 	})
 	if err != nil {
 		return err
 	}
 
-	var itemOut map[string]interface{}
+	var itemOut map[string]any
 	err = attributevalue.UnmarshalMap(out.Item, &itemOut)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("item: %v\n", itemOut["value"])
+	fmt.Printf("item.created_at type: %T\n", itemOut["created_at"])
+
 	return nil
 }
 

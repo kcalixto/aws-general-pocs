@@ -4,10 +4,12 @@ frameworkVersion: "3"
 
 custom:
   this: ${self:service}-${self:provider.stage}
+  tableName: ${self:custom.this}-db
 
 provider:
   name: aws
-  runtime: go1.x
+  architecture: arm64
+  runtime: provided.al2
   stage: "poc"
   region: sa-east-1
   iam:
@@ -17,13 +19,34 @@ provider:
           Action:
             - dynamodb:*
           Resource: "*"
+  
+  environment:
+    TABLE_NAME: ${self:custom.tableName}
+
+package:
+  individually: true
 
 functions:
   main:
-    handler: bin/main
-    cors: true
+    handler: bootstrap
+    package:
+      artifact: bin/main.zip
     events:
       - http:
           path: /
           method: get
           cors: true
+
+resources:
+  Resources:
+    DynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
